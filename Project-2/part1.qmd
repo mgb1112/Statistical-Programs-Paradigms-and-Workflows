@@ -1,0 +1,168 @@
+---
+title: "project_2 part_1"
+format: html
+editor: visual
+---
+
+**Focus of Investigation**
+
+The focus of this investigation is the ethnic/racial breakdown of people in the United States. We are hoping to look at what the racial/ethnic breakdown is now and how it has changed over the past decade. On top of this, we also want to look at the people of voting age, so we can see how the proportion of people over 18 in the US has changed over the last decade.
+
+**Download Data of Interest**
+
+```{r}
+#load required packages
+library(tidycensus)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(purrr)
+
+#load API
+census_api_key("b95360ea221c547f346ba1cd7a6093c62f305554", install = TRUE, overwrite = TRUE)
+
+#defining years and variables for last decade dataset
+years <- 2013:2019
+variables <- c(total_pop = "B01003_001", race_white = "B02001_002", race_black = "B02001_003", race_native = "B02001_004", race_asian = "B02001_005", race_hispanic = "B03003_003", male_18_to_19 = "B01001_007", male_20_to_24 = "B01001_008", male_25_to_29 = "B01001_009", male_30_to_34 = "B01001_010", male_35_to_39 = "B01001_011", male_40_to_44 = "B01001_012", male_45_to_49 = "B01001_013", male_50_to_54 = "B01001_014", male_55_to_59 = "B01001_015", male_60_to_61 = "B01001_016", male_62_to_64 = "B01001_017", male_65_to_66 = "B01001_018", male_67_to_69 = "B01001_019", male_70_to_74 = "B01001_020", male_75_to_79 = "B01001_021", male_80_to_84 = "B01001_022", male_85_and_over = "B01001_023", female_18_to_19 = "B01001_031", female_20_to_24 = "B01001_032", female_25_to_29 = "B01001_033", female_30_to_34 = "B01001_034", female_35_to_39 = "B01001_035", female_40_to_44 = "B01001_036", female_45_to_49 = "B01001_037", female_50_to_54 = "B01001_038", female_55_to_59 = "B01001_039", female_60_to_61 = "B01001_040", female_62_to_64 = "B01001_041", female_65_to_66 = "B01001_042", female_67_to_69 = "B01001_043", female_70_to_74 = "B01001_044", female_75_to_79 = "B01001_045", female_80_to_84 = "B01001_046", female_85_and_over = "B01001_047")
+
+#make list
+last_decade_data <- list()
+
+#fetch the data
+for(year in years){
+  data <- get_acs(
+    geography = "state",
+    variables = variables,
+    year = year,
+    survey = "acs1"
+  )
+  data <- data %>% mutate(year = year)
+  last_decade_data[[as.character(year)]] <- data
+}
+
+#combine to one dataframe
+last_decade_df <- bind_rows(last_decade_data)
+
+#glimpse at dataset
+head(last_decade_df)
+
+#get data from 2020 (different because its a decennial)
+variables_2020 <- c(total_pop = "P1_001N", 
+  race_white = "P1_003N", race_black = "P1_004N", race_native = "P1_005N", race_asian = "P1_006N", race_hispanic = "P2_002N"
+)
+census_2020 <- get_decennial(
+  geography = "state", 
+  variables = variables_2020,
+  year = 2020,
+  survey = dec
+)
+
+#get data from 2021-2023
+years2 <- 2021:2023
+last_3_years <- list()
+for(year in years2){
+  data <- get_acs(
+    geography = "state",
+    variables = variables,
+    year = year,
+    survey = "acs1"
+  )
+  data <- data %>% mutate(year = year)
+  last_3_years[[as.character(year)]] <- data
+}
+
+#combine to one dataframe
+last_3_years_df <- bind_rows(last_3_years)
+
+#glimpse at dataset
+head(last_3_years_df)
+
+#save data frames
+write.csv(last_decade_data, "last_decade_data", row.names = FALSE)
+write.csv(last_decade_df, "last_decade_df", row.names = FALSE)
+write.csv(census_2020, "census_2020", row.names = FALSE)
+write.csv(last_3_years_df, "last_3_years_df", row.names = FALSE)
+```
+
+**Clean Data**
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(purrr)
+
+#reformatting "variable" column to columns by value
+wide_decade_data <- last_decade_df %>% pivot_wider(names_from = variable, values_from = estimate)
+wide_last_3_data <- last_3_years_df %>% pivot_wider(names_from = variable, values_from = estimate)
+#now that data is wide, combine to get total population over 18 column
+decade_data_sum <- wide_decade_data %>% group_by (year, NAME) %>% mutate(over_18 = sum(c(male_18_to_19, male_20_to_24, male_25_to_29, male_30_to_34, male_35_to_39, male_40_to_44, male_45_to_49, male_50_to_54, male_55_to_59, male_60_to_61, male_62_to_64, male_65_to_66, male_67_to_69, male_70_to_74, male_75_to_79, male_80_to_84, male_85_and_over, female_18_to_19, female_20_to_24, female_25_to_29, female_30_to_34, female_35_to_39, female_40_to_44, female_45_to_49, female_50_to_54, female_55_to_59, female_60_to_61, female_62_to_64, female_65_to_66, female_67_to_69, female_70_to_74, female_75_to_79, female_80_to_84, female_85_and_over), na.rm = TRUE))
+decade_data_sum <- subset(decade_data_sum, select = -c(3,5:38))
+decade_data_sum <- decade_data_sum %>% group_by(GEOID, NAME, year) %>% summarise(across(-over_18, sum, na.rm = TRUE), over_18 = first(over_18))
+
+last_3_data_sum <- wide_last_3_data %>% group_by (year, NAME) %>% mutate(over_18 = sum(c(male_18_to_19, male_20_to_24, male_25_to_29, male_30_to_34, male_35_to_39, male_40_to_44, male_45_to_49, male_50_to_54, male_55_to_59, male_60_to_61, male_62_to_64, male_65_to_66, male_67_to_69, male_70_to_74, male_75_to_79, male_80_to_84, male_85_and_over, female_18_to_19, female_20_to_24, female_25_to_29, female_30_to_34, female_35_to_39, female_40_to_44, female_45_to_49, female_50_to_54, female_55_to_59, female_60_to_61, female_62_to_64, female_65_to_66, female_67_to_69, female_70_to_74, female_75_to_79, female_80_to_84, female_85_and_over), na.rm = TRUE))
+last_3_data_sum <- subset(last_3_data_sum, select = -c(3,5:38))
+last_3_data_sum <- last_3_data_sum %>% group_by(GEOID, NAME, year) %>% summarise(across(-over_18, sum, na.rm = TRUE), over_18 = first(over_18))
+
+wide_census_2020 <- census_2020 %>% pivot_wider(names_from = variable, values_from = value) %>% mutate(year = 2020) %>% mutate(over_18 = NA)
+
+#make datafrmaes into lists so we can use purrr functions to manipulate and combine them
+census_data_list <- list(decade_data_sum, wide_census_2020, last_3_data_sum)
+census_wide_lists <- map(census_data_list, ~.x %>% pivot_wider(names_from = year, values_from = c(total_pop, race_white, race_black, race_native, race_asian, race_hispanic, over_18), names_glue = "{.value}_{year}"))
+census_data_combined <- reduce(census_wide_lists, full_join, by = "GEOID", "NAME")
+census_data_combined <- subset(census_data_combined, select = -c( 52, 60))
+#make a long version of data
+combined_long <- census_data_combined %>% pivot_longer(cols = c(starts_with("total_pop_2013"): starts_with("over_18_2023")), names_to = "group", values_to = "value")
+
+combined_long <- combined_long %>% mutate( year = str_extract(group, "\\d{4}"), pop_type = str_extract(group, "total_pop|over_18"), race = str_extract(group, "white|black|asian|hispanic|native")) %>% select(-group)
+
+combined_long <- combined_long %>% pivot_wider(names_from = c(pop_type, race), values_from = "value")
+
+combined_long <- combined_long %>% rename(
+  Name = NAME.x,
+  total_pop = total_pop_NA,
+  white = NA_white,
+  black = NA_black,
+  native = NA_native,
+  asian = NA_asian,
+  hispanic = NA_hispanic,
+  over_18 = over_18_NA
+)
+#longer data
+combined_longer <- census_data_combined %>% pivot_longer(cols = c(starts_with("total_pop_2013"): starts_with("over_18_2023")), names_to = "group", values_to = "value")
+
+combined_longer <- combined_longer %>% mutate( year = str_extract(group, "\\d{4}"), pop_type = str_extract(group, "total_pop|over_18"), race = str_extract(group, "white|black|asian|hispanic|native")) %>% select(-group)
+
+#summary table of population numbers and race numbers
+summary_pop<- combined_long %>% group_by(year) %>% summarise(total_us_pop = sum(total_pop), us_over_18 = sum(over_18))
+
+race_summary <- combined_long %>% group_by(year) %>% summarise(total_pop_us = sum(total_pop), white = sum(white), black = sum(black), asian = sum(asian), native = sum(native), hispanic = sum(hispanic))
+
+race_summary <- race_summary %>% pivot_longer(cols = -c(year, total_pop_us), names_to = "race", values_to = "population")
+
+race_summary<- race_summary %>% mutate(Percent = (population/total_pop_us)*100)
+
+```
+
+**Create Visualizations**
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(scales)
+#plot one: line plot of total population vs. voting population over the last decade
+ggplot(summary_pop, aes(x = year)) + geom_point(aes(y=total_us_pop), color = "cadetblue1") + geom_point(aes(y = us_over_18), color = "coral1") + labs(title = "US Population vs US Voting Age Population", subtitle = "Distributions of the US total population vs population over 18", caption = "Data from US Census Bureau, tidycensus R package", x = "Year", y="Population") + scale_y_continuous(labels = label_comma()) + theme_dark()
+#plot two: bar graph race/ethnic breakdown counts over the last decade facet by GEOID
+ggplot(race_summary, aes(x = year, y = total_pop_us, fill = race)) + geom_bar(stat = "identity", position = "stack") + labs(title = "Total Population Race/Ethnic Breakdown", subtitle = "Breakdown of US population by White, Black, Native, Asian, and Hispanic", caption = "Data from the US Census Bureau, tinycensus R package", y = "Population", x = "year") +  scale_y_continuous(labels = label_comma()) + scale_fill_manual(values = c("cadetblue1", "coral1", "darkorchid1", "gold", "limegreen")) + theme_dark()
+#plot three: bar graph race/ethnic breakdown percents over last decade
+ggplot(race_summary, aes(x = year, y = Percent, fill = race)) + geom_bar(stat = "identity", position = "stack") + labs(title = "Race/Ethnic Percent Breakdown by Year", subtitle = "Breakdown of US population by White, Black, Native, Asian, and Hispanic", caption = "Data from the US Census Bureau, tinycensus R package", y = "Percentage", x = "year") +  scale_y_continuous(labels = label_comma()) + scale_fill_manual(values = c("cadetblue1", "coral1", "darkorchid1", "gold", "limegreen")) + theme_dark()
+```
+
+**Findings**
+
+I began by going through several different websites from the Census Bureau to get a better idea of the type of data that was available to me. I ended up deciding that I wanted to focus on race/ethnic break down and proportion of people that are of voting age. I downloaded the data using the tidycensus R package and proper API code/packages. From there, I used purr, dplyr, and tidyr to make the data cleaner. I pivoted and rearranged the data how I thought I would need it. Then, I started to create the plots using ggplot2. As I worked on my plots, I found that I need the data in a slightly diffferent way than I had thought. So I did go back and do some more pivoting and summarizing to have the data that way that I wanted to look at it.
+
+My first plot looked at the distributions of the total US population and the population of the US that is over 18 (so able to vote). This plot surprised me just a little bit. There was a much larger gap between the two lines than I had expected. I didn't realize how many people there were in the US under 18. My next two plots looked at race/ethnic breakdown in the US. The first one looked directly at the counts, and the second looked at the same data but as percentages instead. For me, the biggest surprise came from comparing the two graphs. In my second graph that looked at the counts directly, the colors seem to be relatively uniform in size of the stacked bars. However, when you look at the percentages, white becomes much thicker and native looks almost nonexistent. I wonder why they look pretty similar when viewed bu count, but not by percent of the total population. In terms of other analysis/future analysis, I would have liked to facet this and look at states. However, with there being 52 regions in this data, the faceting got really messy. Additionally, further breakdown could be done in either larger regions, or looking smaller like into states or counties.
+
+There are a lot of potential problems/biases from this data set. First, I want to note potential error on my part. I could not get the code for the US population over 18 to work in the 2020 census, so I am missing that data for that year. In terms of potential bias from the census itself, they are mostly based on how they are getting data. There could be a lot of non-response bias, which could lead to certain populations being under/mis-represented. Related problem, but slightly different cause could be under-representing geographic regions that are harder to get to. Super rural or hard to reach areas are likely to not be reported well. Also, people could be responding with what they think the government wants to hear, and not entirely truthfully. These are just a few potential problems with census data. However, it is still important to note that the census does get a ton of data from a lot of different people, and it really is important information for us to use and analyze.

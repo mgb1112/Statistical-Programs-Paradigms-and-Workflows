@@ -1,0 +1,136 @@
+---
+title: "part2"
+format: html
+editor: visual
+---
+
+Website to Scrape: https://editorial.rottentomatoes.com/guide/best-comedy-shows-of-all-time/4
+
+```{r}
+library(rvest)
+library(tidyr)
+library(dplyr)
+library(stringr)
+library(purrr)
+library(ggplot2)
+library(forcats)
+url = "https://editorial.rottentomatoes.com/guide/best-comedy-shows-of-all-time/4"
+webpage = read_html(url)
+```
+
+Extract data with rvest. Here, you will want to identify the specific HTML elements or CSS selectors containing the data. Then, use rvest functions like read_html(), html_nodes(), and html_text() or html_table() to retrieve the data.
+```{r}
+ranks = webpage %>% #extract ranks 
+  html_nodes(".countdown-index") %>%
+  html_text() 
+
+titles = webpage %>% #extract show name
+  html_nodes(".article_movie_title a") %>%
+  html_text()
+ratings = webpage %>%
+  html_nodes(".tMeterScore") %>%
+  html_text()
+
+ranks_titles=data.frame( #make table of each show and its rank 
+  rank = ranks,
+  title = titles, 
+  rating = ratings
+)
+start_year = webpage %>% #extract start years of tv shows 
+  html_nodes(".start-year") %>%
+  html_text
+
+
+
+```
+
+
+Clean the data. Next, perform some basic wrangling, such as remove extra whitespace, handle missing values, and convert data types as needed. You might find the functions from dplyr or tidyr useful for any additional transformations, such as renaming columns, filtering rows, or creating new variables.
+```{r}
+start_year = start_year[-12] # remove the value that is NUll 
+ranks_titles = ranks_titles %>%
+  slice(-12)
+```
+
+```{r}
+#remove parenthesis from start_year list 
+for (i in 1:length(start_year)){
+  start_year[i]=gsub("[()]", "", start_year[i])
+}
+
+start_year_data = tibble(start_year)
+start_year_numeric = start_year_data %>%
+  mutate(start_year = map_dbl(start_year, as.numeric))
+
+
+start_year_numeric = start_year_numeric %>%
+  mutate(time_range = case_when (
+    start_year >= 2000 ~ "21st century", 
+    start_year <2000 & start_year >= 1980 ~"90's and 80's", 
+    start_year < 1980 ~ "70's, 60's, 50's"
+  ))
+
+start_year_numeric$time_range <- fct_relevel(start_year_numeric$time_range, "70's, 60's, 50's", "90's and 80's","21st century")
+```
+
+```{r}
+#remove rows without a rating
+#remove the office because there are 2 
+#reorder list based on rank value 
+
+filtered_ratings_series = ranks_titles %>% 
+  filter(str_detect(rating, "^\\d+%$")) %>%
+  mutate(rating_numeric = as.numeric(str_replace(rating, "%", ""))) %>%
+  filter (title != "The Office") %>% mutate(rank_numeric = as.numeric(str_replace(rank, "#", ""))) %>%
+  mutate(title = fct_reorder(title, rank_numeric, .desc = TRUE))
+```
+
+
+Analyze the data. Perform a simple analysis of your choice.
+
+```{r}
+min_year = min(start_year_numeric$start_year)
+
+max_year = max(start_year_numeric$start_year)
+
+```
+```{r}
+ggplot(start_year_numeric, aes(x = time_range, fill = time_range)) + geom_histogram(stat = "count") + labs(x = "Release Year", y = "Count", title = "When the 50 most popular Comedy Series\nwere released")  + theme(axis.text.x = element_text(angle = 10))
+```
+
+```{r}
+total_21st = sum(start_year_numeric$time_range == "21st century")
+
+total9080 = sum(start_year_numeric$time_range == "90's and 80's")
+
+total70before= sum(start_year_numeric$time_range == "70's, 60's, 50's")
+
+percentage_21st = total_21st/(total_21st + total9080 + total70before)
+percentage_21st
+```
+
+```{r}
+# Count the number of titles with  3 words
+three_word_titles = grep("^\\S+(?:\\s+\\S+){2}$", ranks_titles$title, value = TRUE)
+
+
+count_three_words = length(three_word_titles)
+cat("Seris with 3 words in the title:")
+print(three_word_titles)
+cat("Number of seris with 3 words in the title:", count_three_words)
+
+
+```
+```{r}
+ggplot(filtered_ratings_series, aes(x = rating_numeric, y = title)) + geom_bar(stat = "identity", fill = "lightpink", color = "black") +  labs( x = "Rating (%)", y = "Series Name", title = "Top 50 Comedy Series Rating", subtitle = "All series that did not have a rating were \nremoved from this graph", caption= "Series name is in order to rank \nwith the first series having the highest rank of all series listed") + theme(
+axis.text.y = element_text(size = 5))
+```
+Report your findings. Provide a paragraph summarizing your methods and key findings. Include any limitations or potential biases in your scraping or analysis. Be sure to comment and organize your code so is easy to understand what you are doing.
+
+
+The bar graph (made using ggplot2) displayed that series with the highest ratings are evenly distributed throughout the highest ranked series who had rating data on the website.Using the grep function it was uncovered that 9 series have titles with exactly 3 words. 44.89796% of the 50 most popular series were released in the 21st century and the least number of series were in the 70s,60s,50s. The comedy series in the top 50 created most recently was released in 2017. The first comedy series in the top 50 was released in 1951.
+The limitations that existed in the data scraping and analysis was that the table included two series with the name "The Office", both released at different years and when plotting the rating percentage and the series names the percentage was over 100 so that value was removed. In addition in the list #39 was missing data so we removed that row, making the list have only 49 entries. 
+
+
+
+
