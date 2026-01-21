@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>project_2 part_1</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="part1_files/libs/clipboard/clipboard.min.js"></script>
+<script src="part1_files/libs/quarto-html/quarto.js"></script>
+<script src="part1_files/libs/quarto-html/popper.min.js"></script>
+<script src="part1_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="part1_files/libs/quarto-html/anchor.min.js"></script>
+<link href="part1_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="part1_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="part1_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="part1_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="part1_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">project_2 part_1</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p><strong>Focus of Investigation</strong></p>
+<p>The focus of this investigation is the ethnic/racial breakdown of people in the United States. We are hoping to look at what the racial/ethnic breakdown is now and how it has changed over the past decade. On top of this, we also want to look at the people of voting age, so we can see how the proportion of people over 18 in the US has changed over the last decade.</p>
+<p><strong>Download Data of Interest</strong></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#load required packages</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidycensus)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'tidycensus' was built under R version 4.4.2</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.1.4     ✔ readr     2.1.5
+✔ forcats   1.0.0     ✔ stringr   1.5.1
+✔ ggplot2   3.5.1     ✔ tibble    3.2.1
+✔ lubridate 1.9.3     ✔ tidyr     1.3.1
+✔ purrr     1.0.2     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(purrr)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co">#load API</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="fu">census_api_key</span>(<span class="st">"b95360ea221c547f346ba1cd7a6093c62f305554"</span>, <span class="at">install =</span> <span class="cn">TRUE</span>, <span class="at">overwrite =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Your original .Renviron will be backed up and stored in your R HOME directory if needed.
+Your API key has been stored in your .Renviron and can be accessed by Sys.getenv("CENSUS_API_KEY"). 
+To use now, restart R or run `readRenviron("~/.Renviron")`</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "b95360ea221c547f346ba1cd7a6093c62f305554"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">#defining years and variables for last decade dataset</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>years <span class="ot">&lt;-</span> <span class="dv">2013</span><span class="sc">:</span><span class="dv">2019</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>variables <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">total_pop =</span> <span class="st">"B01003_001"</span>, <span class="at">race_white =</span> <span class="st">"B02001_002"</span>, <span class="at">race_black =</span> <span class="st">"B02001_003"</span>, <span class="at">race_native =</span> <span class="st">"B02001_004"</span>, <span class="at">race_asian =</span> <span class="st">"B02001_005"</span>, <span class="at">race_hispanic =</span> <span class="st">"B03003_003"</span>, <span class="at">male_18_to_19 =</span> <span class="st">"B01001_007"</span>, <span class="at">male_20_to_24 =</span> <span class="st">"B01001_008"</span>, <span class="at">male_25_to_29 =</span> <span class="st">"B01001_009"</span>, <span class="at">male_30_to_34 =</span> <span class="st">"B01001_010"</span>, <span class="at">male_35_to_39 =</span> <span class="st">"B01001_011"</span>, <span class="at">male_40_to_44 =</span> <span class="st">"B01001_012"</span>, <span class="at">male_45_to_49 =</span> <span class="st">"B01001_013"</span>, <span class="at">male_50_to_54 =</span> <span class="st">"B01001_014"</span>, <span class="at">male_55_to_59 =</span> <span class="st">"B01001_015"</span>, <span class="at">male_60_to_61 =</span> <span class="st">"B01001_016"</span>, <span class="at">male_62_to_64 =</span> <span class="st">"B01001_017"</span>, <span class="at">male_65_to_66 =</span> <span class="st">"B01001_018"</span>, <span class="at">male_67_to_69 =</span> <span class="st">"B01001_019"</span>, <span class="at">male_70_to_74 =</span> <span class="st">"B01001_020"</span>, <span class="at">male_75_to_79 =</span> <span class="st">"B01001_021"</span>, <span class="at">male_80_to_84 =</span> <span class="st">"B01001_022"</span>, <span class="at">male_85_and_over =</span> <span class="st">"B01001_023"</span>, <span class="at">female_18_to_19 =</span> <span class="st">"B01001_031"</span>, <span class="at">female_20_to_24 =</span> <span class="st">"B01001_032"</span>, <span class="at">female_25_to_29 =</span> <span class="st">"B01001_033"</span>, <span class="at">female_30_to_34 =</span> <span class="st">"B01001_034"</span>, <span class="at">female_35_to_39 =</span> <span class="st">"B01001_035"</span>, <span class="at">female_40_to_44 =</span> <span class="st">"B01001_036"</span>, <span class="at">female_45_to_49 =</span> <span class="st">"B01001_037"</span>, <span class="at">female_50_to_54 =</span> <span class="st">"B01001_038"</span>, <span class="at">female_55_to_59 =</span> <span class="st">"B01001_039"</span>, <span class="at">female_60_to_61 =</span> <span class="st">"B01001_040"</span>, <span class="at">female_62_to_64 =</span> <span class="st">"B01001_041"</span>, <span class="at">female_65_to_66 =</span> <span class="st">"B01001_042"</span>, <span class="at">female_67_to_69 =</span> <span class="st">"B01001_043"</span>, <span class="at">female_70_to_74 =</span> <span class="st">"B01001_044"</span>, <span class="at">female_75_to_79 =</span> <span class="st">"B01001_045"</span>, <span class="at">female_80_to_84 =</span> <span class="st">"B01001_046"</span>, <span class="at">female_85_and_over =</span> <span class="st">"B01001_047"</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co">#make list</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>last_decade_data <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="co">#fetch the data</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(year <span class="cf">in</span> years){</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  data <span class="ot">&lt;-</span> <span class="fu">get_acs</span>(</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">geography =</span> <span class="st">"state"</span>,</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">variables =</span> variables,</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">year =</span> year,</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">survey =</span> <span class="st">"acs1"</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>  data <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">year =</span> year)</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>  last_decade_data[[<span class="fu">as.character</span>(year)]] <span class="ot">&lt;-</span> data</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Getting data from the 2013 1-year ACS
+The 1-year ACS provides data for geographies with populations of 65,000 and greater.
+Getting data from the 2014 1-year ACS
+The 1-year ACS provides data for geographies with populations of 65,000 and greater.
+Getting data from the 2015 1-year ACS
+The 1-year ACS provides data for geographies with populations of 65,000 and greater.
+Getting data from the 2016 1-year ACS
+The 1-year ACS provides data for geographies with populations of 65,000 and greater.
+Getting data from the 2017 1-year ACS
+The 1-year ACS provides data for geographies with populations of 65,000 and greater.
+Getting data from the 2018 1-year ACS
+The 1-year ACS provides data for geographies with populations of 65,000 and greater.
+Getting data from the 2019 1-year ACS
+The 1-year ACS provides data for geographies with populations of 65,000 and greater.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co">#combine to one dataframe</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>last_decade_df <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(last_decade_data)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co">#glimpse at dataset</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(last_decade_df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 6
+  GEOID NAME    variable      estimate   moe  year
+  &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;            &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt;
+1 01    Alabama male_18_to_19    71410  3448  2013
+2 01    Alabama male_20_to_24    39337  3699  2013
+3 01    Alabama male_25_to_29    39833  3683  2013
+4 01    Alabama male_30_to_34   101406  5291  2013
+5 01    Alabama male_35_to_39   150334  3843  2013
+6 01    Alabama male_40_to_44   153521  3571  2013</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">#get data from 2020 (different because its a decennial)</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>variables_2020 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">total_pop =</span> <span class="st">"P1_001N"</span>, </span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">race_white =</span> <span class="st">"P1_003N"</span>, <span class="at">race_black =</span> <span class="st">"P1_004N"</span>, <span class="at">race_native =</span> <span class="st">"P1_005N"</span>, <span class="at">race_asian =</span> <span class="st">"P1_006N"</span>, <span class="at">race_hispanic =</span> <span class="st">"P2_002N"</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>census_2020 <span class="ot">&lt;-</span> <span class="fu">get_decennial</span>(</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">geography =</span> <span class="st">"state"</span>, </span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">variables =</span> variables_2020,</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">year =</span> <span class="dv">2020</span>,</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">survey =</span> dec</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Getting data from the 2020 decennial Census
+Using the PL 94-171 Redistricting Data Summary File
+Note: 2020 decennial Census data use differential privacy, a technique that
+introduces errors into data to preserve respondent confidentiality.
+ℹ Small counts should be interpreted with caution.
+ℹ See https://www.census.gov/library/fact-sheets/2021/protecting-the-confidentiality-of-the-2020-census-redistricting-data.html for additional guidance.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co">#get data from 2021-2023</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>years2 <span class="ot">&lt;-</span> <span class="dv">2021</span><span class="sc">:</span><span class="dv">2023</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>last_3_years <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(year <span class="cf">in</span> years2){</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  data <span class="ot">&lt;-</span> <span class="fu">get_acs</span>(</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">geography =</span> <span class="st">"state"</span>,</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">variables =</span> variables,</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">year =</span> year,</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">survey =</span> <span class="st">"acs1"</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>  data <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">year =</span> year)</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>  last_3_years[[<span class="fu">as.character</span>(year)]] <span class="ot">&lt;-</span> data</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Getting data from the 2021 1-year ACS
+The 1-year ACS provides data for geographies with populations of 65,000 and greater.
+Getting data from the 2022 1-year ACS
+The 1-year ACS provides data for geographies with populations of 65,000 and greater.
+Getting data from the 2023 1-year ACS
+The 1-year ACS provides data for geographies with populations of 65,000 and greater.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co">#combine to one dataframe</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>last_3_years_df <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(last_3_years)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="co">#glimpse at dataset</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(last_3_years_df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 6
+  GEOID NAME    variable      estimate   moe  year
+  &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;            &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt;
+1 01    Alabama male_18_to_19    70364  3696  2021
+2 01    Alabama male_20_to_24    38216  3736  2021
+3 01    Alabama male_25_to_29    32896  3278  2021
+4 01    Alabama male_30_to_34    90846  4401  2021
+5 01    Alabama male_35_to_39   158157  3901  2021
+6 01    Alabama male_40_to_44   153644  4497  2021</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co">#save data frames</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(last_decade_data, <span class="st">"last_decade_data"</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(last_decade_df, <span class="st">"last_decade_df"</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(census_2020, <span class="st">"census_2020"</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(last_3_years_df, <span class="st">"last_3_years_df"</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Clean Data</strong></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(purrr)</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="co">#reformatting "variable" column to columns by value</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>wide_decade_data <span class="ot">&lt;-</span> last_decade_df <span class="sc">%&gt;%</span> <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> variable, <span class="at">values_from =</span> estimate)</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>wide_last_3_data <span class="ot">&lt;-</span> last_3_years_df <span class="sc">%&gt;%</span> <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> variable, <span class="at">values_from =</span> estimate)</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="co">#now that data is wide, combine to get total population over 18 column</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>decade_data_sum <span class="ot">&lt;-</span> wide_decade_data <span class="sc">%&gt;%</span> <span class="fu">group_by</span> (year, NAME) <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">over_18 =</span> <span class="fu">sum</span>(<span class="fu">c</span>(male_18_to_19, male_20_to_24, male_25_to_29, male_30_to_34, male_35_to_39, male_40_to_44, male_45_to_49, male_50_to_54, male_55_to_59, male_60_to_61, male_62_to_64, male_65_to_66, male_67_to_69, male_70_to_74, male_75_to_79, male_80_to_84, male_85_and_over, female_18_to_19, female_20_to_24, female_25_to_29, female_30_to_34, female_35_to_39, female_40_to_44, female_45_to_49, female_50_to_54, female_55_to_59, female_60_to_61, female_62_to_64, female_65_to_66, female_67_to_69, female_70_to_74, female_75_to_79, female_80_to_84, female_85_and_over), <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>decade_data_sum <span class="ot">&lt;-</span> <span class="fu">subset</span>(decade_data_sum, <span class="at">select =</span> <span class="sc">-</span><span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">5</span><span class="sc">:</span><span class="dv">38</span>))</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>decade_data_sum <span class="ot">&lt;-</span> decade_data_sum <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(GEOID, NAME, year) <span class="sc">%&gt;%</span> <span class="fu">summarise</span>(<span class="fu">across</span>(<span class="sc">-</span>over_18, sum, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">over_18 =</span> <span class="fu">first</span>(over_18))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: There was 1 warning in `summarise()`.
+ℹ In argument: `across(-over_18, sum, na.rm = TRUE)`.
+ℹ In group 1: `GEOID = "01"`, `NAME = "Alabama"`, `year = 2013`.
+Caused by warning:
+! The `...` argument of `across()` is deprecated as of dplyr 1.1.0.
+Supply arguments directly to `.fns` through an anonymous function instead.
+
+  # Previously
+  across(a:b, mean, na.rm = TRUE)
+
+  # Now
+  across(a:b, \(x) mean(x, na.rm = TRUE))</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`summarise()` has grouped output by 'GEOID', 'NAME'. You can override using the
+`.groups` argument.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>last_3_data_sum <span class="ot">&lt;-</span> wide_last_3_data <span class="sc">%&gt;%</span> <span class="fu">group_by</span> (year, NAME) <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">over_18 =</span> <span class="fu">sum</span>(<span class="fu">c</span>(male_18_to_19, male_20_to_24, male_25_to_29, male_30_to_34, male_35_to_39, male_40_to_44, male_45_to_49, male_50_to_54, male_55_to_59, male_60_to_61, male_62_to_64, male_65_to_66, male_67_to_69, male_70_to_74, male_75_to_79, male_80_to_84, male_85_and_over, female_18_to_19, female_20_to_24, female_25_to_29, female_30_to_34, female_35_to_39, female_40_to_44, female_45_to_49, female_50_to_54, female_55_to_59, female_60_to_61, female_62_to_64, female_65_to_66, female_67_to_69, female_70_to_74, female_75_to_79, female_80_to_84, female_85_and_over), <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>last_3_data_sum <span class="ot">&lt;-</span> <span class="fu">subset</span>(last_3_data_sum, <span class="at">select =</span> <span class="sc">-</span><span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">5</span><span class="sc">:</span><span class="dv">38</span>))</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>last_3_data_sum <span class="ot">&lt;-</span> last_3_data_sum <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(GEOID, NAME, year) <span class="sc">%&gt;%</span> <span class="fu">summarise</span>(<span class="fu">across</span>(<span class="sc">-</span>over_18, sum, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">over_18 =</span> <span class="fu">first</span>(over_18))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`summarise()` has grouped output by 'GEOID', 'NAME'. You can override using the
+`.groups` argument.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>wide_census_2020 <span class="ot">&lt;-</span> census_2020 <span class="sc">%&gt;%</span> <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> variable, <span class="at">values_from =</span> value) <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">year =</span> <span class="dv">2020</span>) <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">over_18 =</span> <span class="cn">NA</span>)</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="co">#make datafrmaes into lists so we can use purrr functions to manipulate and combine them</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>census_data_list <span class="ot">&lt;-</span> <span class="fu">list</span>(decade_data_sum, wide_census_2020, last_3_data_sum)</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>census_wide_lists <span class="ot">&lt;-</span> <span class="fu">map</span>(census_data_list, <span class="sc">~</span>.x <span class="sc">%&gt;%</span> <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> year, <span class="at">values_from =</span> <span class="fu">c</span>(total_pop, race_white, race_black, race_native, race_asian, race_hispanic, over_18), <span class="at">names_glue =</span> <span class="st">"{.value}_{year}"</span>))</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>census_data_combined <span class="ot">&lt;-</span> <span class="fu">reduce</span>(census_wide_lists, full_join, <span class="at">by =</span> <span class="st">"GEOID"</span>, <span class="st">"NAME"</span>)</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>census_data_combined <span class="ot">&lt;-</span> <span class="fu">subset</span>(census_data_combined, <span class="at">select =</span> <span class="sc">-</span><span class="fu">c</span>( <span class="dv">52</span>, <span class="dv">60</span>))</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a><span class="co">#make a long version of data</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>combined_long <span class="ot">&lt;-</span> census_data_combined <span class="sc">%&gt;%</span> <span class="fu">pivot_longer</span>(<span class="at">cols =</span> <span class="fu">c</span>(<span class="fu">starts_with</span>(<span class="st">"total_pop_2013"</span>)<span class="sc">:</span> <span class="fu">starts_with</span>(<span class="st">"over_18_2023"</span>)), <span class="at">names_to =</span> <span class="st">"group"</span>, <span class="at">values_to =</span> <span class="st">"value"</span>)</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>combined_long <span class="ot">&lt;-</span> combined_long <span class="sc">%&gt;%</span> <span class="fu">mutate</span>( <span class="at">year =</span> <span class="fu">str_extract</span>(group, <span class="st">"</span><span class="sc">\\</span><span class="st">d{4}"</span>), <span class="at">pop_type =</span> <span class="fu">str_extract</span>(group, <span class="st">"total_pop|over_18"</span>), <span class="at">race =</span> <span class="fu">str_extract</span>(group, <span class="st">"white|black|asian|hispanic|native"</span>)) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>group)</span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>combined_long <span class="ot">&lt;-</span> combined_long <span class="sc">%&gt;%</span> <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> <span class="fu">c</span>(pop_type, race), <span class="at">values_from =</span> <span class="st">"value"</span>)</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>combined_long <span class="ot">&lt;-</span> combined_long <span class="sc">%&gt;%</span> <span class="fu">rename</span>(</span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">Name =</span> NAME.x,</span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">total_pop =</span> total_pop_NA,</span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">white =</span> NA_white,</span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">black =</span> NA_black,</span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">native =</span> NA_native,</span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">asian =</span> NA_asian,</span>
+<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">hispanic =</span> NA_hispanic,</span>
+<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a>  <span class="at">over_18 =</span> over_18_NA</span>
+<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a><span class="co">#longer data</span></span>
+<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>combined_longer <span class="ot">&lt;-</span> census_data_combined <span class="sc">%&gt;%</span> <span class="fu">pivot_longer</span>(<span class="at">cols =</span> <span class="fu">c</span>(<span class="fu">starts_with</span>(<span class="st">"total_pop_2013"</span>)<span class="sc">:</span> <span class="fu">starts_with</span>(<span class="st">"over_18_2023"</span>)), <span class="at">names_to =</span> <span class="st">"group"</span>, <span class="at">values_to =</span> <span class="st">"value"</span>)</span>
+<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-28"><a href="#cb24-28" aria-hidden="true" tabindex="-1"></a>combined_longer <span class="ot">&lt;-</span> combined_longer <span class="sc">%&gt;%</span> <span class="fu">mutate</span>( <span class="at">year =</span> <span class="fu">str_extract</span>(group, <span class="st">"</span><span class="sc">\\</span><span class="st">d{4}"</span>), <span class="at">pop_type =</span> <span class="fu">str_extract</span>(group, <span class="st">"total_pop|over_18"</span>), <span class="at">race =</span> <span class="fu">str_extract</span>(group, <span class="st">"white|black|asian|hispanic|native"</span>)) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>group)</span>
+<span id="cb24-29"><a href="#cb24-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-30"><a href="#cb24-30" aria-hidden="true" tabindex="-1"></a><span class="co">#summary table of population numbers and race numbers</span></span>
+<span id="cb24-31"><a href="#cb24-31" aria-hidden="true" tabindex="-1"></a>summary_pop<span class="ot">&lt;-</span> combined_long <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span> <span class="fu">summarise</span>(<span class="at">total_us_pop =</span> <span class="fu">sum</span>(total_pop), <span class="at">us_over_18 =</span> <span class="fu">sum</span>(over_18))</span>
+<span id="cb24-32"><a href="#cb24-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-33"><a href="#cb24-33" aria-hidden="true" tabindex="-1"></a>race_summary <span class="ot">&lt;-</span> combined_long <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span> <span class="fu">summarise</span>(<span class="at">total_pop_us =</span> <span class="fu">sum</span>(total_pop), <span class="at">white =</span> <span class="fu">sum</span>(white), <span class="at">black =</span> <span class="fu">sum</span>(black), <span class="at">asian =</span> <span class="fu">sum</span>(asian), <span class="at">native =</span> <span class="fu">sum</span>(native), <span class="at">hispanic =</span> <span class="fu">sum</span>(hispanic))</span>
+<span id="cb24-34"><a href="#cb24-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-35"><a href="#cb24-35" aria-hidden="true" tabindex="-1"></a>race_summary <span class="ot">&lt;-</span> race_summary <span class="sc">%&gt;%</span> <span class="fu">pivot_longer</span>(<span class="at">cols =</span> <span class="sc">-</span><span class="fu">c</span>(year, total_pop_us), <span class="at">names_to =</span> <span class="st">"race"</span>, <span class="at">values_to =</span> <span class="st">"population"</span>)</span>
+<span id="cb24-36"><a href="#cb24-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-37"><a href="#cb24-37" aria-hidden="true" tabindex="-1"></a>race_summary<span class="ot">&lt;-</span> race_summary <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">Percent =</span> (population<span class="sc">/</span>total_pop_us)<span class="sc">*</span><span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Create Visualizations</strong></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(scales)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'scales' was built under R version 4.4.2</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'scales'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:purrr':
+
+    discard</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:readr':
+
+    col_factor</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co">#plot one: line plot of total population vs. voting population over the last decade</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(summary_pop, <span class="fu">aes</span>(<span class="at">x =</span> year)) <span class="sc">+</span> <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">y=</span>total_us_pop), <span class="at">color =</span> <span class="st">"cadetblue1"</span>) <span class="sc">+</span> <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">y =</span> us_over_18), <span class="at">color =</span> <span class="st">"coral1"</span>) <span class="sc">+</span> <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"US Population vs US Voting Age Population"</span>, <span class="at">subtitle =</span> <span class="st">"Distributions of the US total population vs population over 18"</span>, <span class="at">caption =</span> <span class="st">"Data from US Census Bureau, tidycensus R package"</span>, <span class="at">x =</span> <span class="st">"Year"</span>, <span class="at">y=</span><span class="st">"Population"</span>) <span class="sc">+</span> <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> <span class="fu">label_comma</span>()) <span class="sc">+</span> <span class="fu">theme_dark</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 1 row containing missing values or values outside the scale range
+(`geom_point()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="part1_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co">#plot two: bar graph race/ethnic breakdown counts over the last decade facet by GEOID</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(race_summary, <span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> total_pop_us, <span class="at">fill =</span> race)) <span class="sc">+</span> <span class="fu">geom_bar</span>(<span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">position =</span> <span class="st">"stack"</span>) <span class="sc">+</span> <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Total Population Race/Ethnic Breakdown"</span>, <span class="at">subtitle =</span> <span class="st">"Breakdown of US population by White, Black, Native, Asian, and Hispanic"</span>, <span class="at">caption =</span> <span class="st">"Data from the US Census Bureau, tinycensus R package"</span>, <span class="at">y =</span> <span class="st">"Population"</span>, <span class="at">x =</span> <span class="st">"year"</span>) <span class="sc">+</span>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> <span class="fu">label_comma</span>()) <span class="sc">+</span> <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"cadetblue1"</span>, <span class="st">"coral1"</span>, <span class="st">"darkorchid1"</span>, <span class="st">"gold"</span>, <span class="st">"limegreen"</span>)) <span class="sc">+</span> <span class="fu">theme_dark</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="part1_files/figure-html/unnamed-chunk-3-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co">#plot three: bar graph race/ethnic breakdown percents over last decade</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(race_summary, <span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> Percent, <span class="at">fill =</span> race)) <span class="sc">+</span> <span class="fu">geom_bar</span>(<span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">position =</span> <span class="st">"stack"</span>) <span class="sc">+</span> <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Race/Ethnic Percent Breakdown by Year"</span>, <span class="at">subtitle =</span> <span class="st">"Breakdown of US population by White, Black, Native, Asian, and Hispanic"</span>, <span class="at">caption =</span> <span class="st">"Data from the US Census Bureau, tinycensus R package"</span>, <span class="at">y =</span> <span class="st">"Percentage"</span>, <span class="at">x =</span> <span class="st">"year"</span>) <span class="sc">+</span>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> <span class="fu">label_comma</span>()) <span class="sc">+</span> <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"cadetblue1"</span>, <span class="st">"coral1"</span>, <span class="st">"darkorchid1"</span>, <span class="st">"gold"</span>, <span class="st">"limegreen"</span>)) <span class="sc">+</span> <span class="fu">theme_dark</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="part1_files/figure-html/unnamed-chunk-3-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Findings</strong></p>
+<p>I began by going through several different websites from the Census Bureau to get a better idea of the type of data that was available to me. I ended up deciding that I wanted to focus on race/ethnic break down and proportion of people that are of voting age. I downloaded the data using the tidycensus R package and proper API code/packages. From there, I used purr, dplyr, and tidyr to make the data cleaner. I pivoted and rearranged the data how I thought I would need it. Then, I started to create the plots using ggplot2. As I worked on my plots, I found that I need the data in a slightly diffferent way than I had thought. So I did go back and do some more pivoting and summarizing to have the data that way that I wanted to look at it.</p>
+<p>My first plot looked at the distributions of the total US population and the population of the US that is over 18 (so able to vote). This plot surprised me just a little bit. There was a much larger gap between the two lines than I had expected. I didn’t realize how many people there were in the US under 18. My next two plots looked at race/ethnic breakdown in the US. The first one looked directly at the counts, and the second looked at the same data but as percentages instead. For me, the biggest surprise came from comparing the two graphs. In my second graph that looked at the counts directly, the colors seem to be relatively uniform in size of the stacked bars. However, when you look at the percentages, white becomes much thicker and native looks almost nonexistent. I wonder why they look pretty similar when viewed bu count, but not by percent of the total population. In terms of other analysis/future analysis, I would have liked to facet this and look at states. However, with there being 52 regions in this data, the faceting got really messy. Additionally, further breakdown could be done in either larger regions, or looking smaller like into states or counties.</p>
+<p>There are a lot of potential problems/biases from this data set. First, I want to note potential error on my part. I could not get the code for the US population over 18 to work in the 2020 census, so I am missing that data for that year. In terms of potential bias from the census itself, they are mostly based on how they are getting data. There could be a lot of non-response bias, which could lead to certain populations being under/mis-represented. Related problem, but slightly different cause could be under-representing geographic regions that are harder to get to. Super rural or hard to reach areas are likely to not be reported well. Also, people could be responding with what they think the government wants to hear, and not entirely truthfully. These are just a few potential problems with census data. However, it is still important to note that the census does get a ton of data from a lot of different people, and it really is important information for us to use and analyze.</p>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
