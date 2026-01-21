@@ -1,0 +1,23 @@
+project:
+  type: website
+
+website:
+  title: "project-1"
+  navbar:
+    theme: slate
+    left:
+      - href: index.qmd
+        text: Home
+      - about.qmd
+      - data_exploration.qmd
+
+
+format:
+  html:
+    theme: slate
+    css: styles.css
+    toc: true
+
+editor: visual
+bibliography: project_1_refs.bib
+
