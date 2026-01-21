@@ -1,0 +1,402 @@
+---
+title: "Project Paper"
+format: html
+editor: visual
+---
+
+
+
+# **Prediction of Wind Event Devastation**
+
+## Team Windows Group Members
+
+Cassie Chou, JHED ID: cchou24, email: cchou24\@jh.edu\
+Kate Brown, JHED ID: kbrow275, email: kbrow275\@jh.edu\
+Grace Brooks, JHED ID: mbrook66, email: mbrook66\@jh.edu\
+Dhruthi Mandavilli, JHED ID: dmandav2, email: dmandav2\@jh.edu
+
+## Question
+
+Can we model wind event devastation (aggregate statistic including direct and indirect in- jury/deaths, damage to property, damage to crops) based on factors like location, magnitude, wind speed, etc.?
+
+## Goals and Importance
+
+The primary goals of our project were the following:
+
+1.  Understand the relationship between wind event devastation and several characteristics of the event such as time, location, and wind magnitude.
+
+2.  Create an aggregate statistic that represents wind event devastation.
+
+3.  Develop a machine learning model that would use relevant predictors, such as wind magnitude, storm time duration, and location, to predict this statistic.
+
+4.  Make our results available and digestible to the public on a website.
+
+Our aggregate statistic represents a combination of indirect and direct injuries and death, damage to property, and damage to crops caused by the wind event.
+
+Similar to how hurricane categorization can help governments and citizens plan and prepare for upcoming storms, we hope that predicting wind event devastation will help protect vulnerable communities. If we can predict wind event devastation, we can allocate more resources to vulnerable locations and warn vulnerable populations. By giving governmental bodies a better idea of how much devastation to prepare for, we hope to motivate wind event preparation and ultimately reduce this devastation and speed up recovery.
+
+## Background
+
+With the climate change crisis, there has been an increase in extreme weather events over the past decade, and that trend is only expected to continue. We decided that we wanted to look into these extreme events and see what type of analysis we could perform on one or multiple of them. Our initial research found a few articles that used past data on multiple tornado characteristics and machine modeling techniques to predict magnitude \[Jacquot\] and damage\[Diaz and Maxwell\] of tornadoes. We also found an article that did similar modeling on thunderstorms to better equip forecasters and the general public to prepare for storms that could turn into tornadoes\[FAR AFIELD\]. We decided that we wanted to approach our project in a similar way, but investigate a different extreme weather event.
+
+## Import Packages
+
+
+
+```{r}
+library(httr)
+library(purrr)
+library(R.utils)
+library(readr)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(stringr)
+```
+
+
+
+## Downloading the Data
+
+We found a dataset with data that fit our goals in the NOAA Storm Event database. This data was available as .csv files for each year that we could download by simply clicking. Initially, we were not sure the best approach to download them in a non-trivial way. We considered some sort of data mining approach, or using something like wget from the command line. However, we did not think that the format would not work properly. We ended up using the map function from the purrr R package. Since the site had multiple .csv files we were interested in, the map function allowed us to run through them and only download the specific files we were interested in. So, we created a function to download a .csv file and paired it with map() to obtain the files for the years we were interested in (2008, 2013, 2018). This method downloaded the proper files to our computer, however they were zipped and not usable. So, we had to go back into our function and rework the code so that it would unzip and read in the downloaded files. After this fix, everything worked as we had intended.
+
+
+
+```{r}
+#create location to save the data files
+storm_data <- "storm_events_csvs"
+if(!dir.exists(storm_data)){
+  dir.create(storm_data)
+}
+
+#write a function to download and unzip csv file
+download_and_unzip <- function(url) {
+  tryCatch({
+    #extract proper file name
+    filename <- basename(url)
+    destfile <- file.path(storm_data, filename)
+    
+    #download the file
+    response <- GET(url, write_disk(destfile, overwrite = TRUE))
+    if (status_code(response) == 200) {
+      message("Downloaded: ", filename)
+      
+      #check if the file is a .gz and unzip
+      if (grepl("\\.gz$", filename)) {
+        decompressed_file <- sub("\\.gz$", "", destfile)
+        gunzip(destfile, destname = decompressed_file, overwrite = TRUE)
+        message("Decompressed: ", decompressed_file)
+      }
+    } else {
+      message("Failed to download: ", url)
+    }
+  }, error = function(e) {
+    message("Error downloading ", url, ": ", e$message)
+  })
+}
+
+#define the base url site and specific files we want to download
+base_url <- "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/"
+files_to_download <- c(
+  "StormEvents_details-ftp_v1.0_d2008_c20240620.csv.gz",
+  "StormEvents_details-ftp_v1.0_d2013_c20230118.csv.gz",
+  "StormEvents_details-ftp_v1.0_d2018_c20240716.csv.gz"
+)
+urls <- paste0(base_url, files_to_download)
+
+#use map from purrr to download the files
+map(urls, download_and_unzip)
+
+#read csv files and make data frames
+read_csvs <- function(directory) {
+  tryCatch({
+    #list the csv files available
+    csv_files <- list.files(directory, pattern = "\\.csv$", full.names = TRUE)
+    
+    #read in files and make into data frame
+    walk(csv_files, function(file) {
+      #create variable name to make dataframe
+      data_frame_name <- make.names(gsub("\\.csv$", "", basename(file)))
+      assign(data_frame_name, read_csv(file, col_types = cols()), envir = .GlobalEnv)
+      message("Data frame created: ", data_frame_name)
+    })
+  }, error = function(e) {
+    message("Error reading CSV files: ", e$message)
+  })
+}
+
+read_csvs(storm_data)
+
+```
+
+```{r}
+eight = StormEvents_details.ftp_v1.0_d2008_c20240620
+thirteen = StormEvents_details.ftp_v1.0_d2013_c20230118
+eighteen = StormEvents_details.ftp_v1.0_d2018_c20240716
+```
+
+
+
+## Data Cleaning
+
+
+
+```{r}
+clean_data = function(data) {
+cleaned_data = data %>% 
+  filter(grepl("wind", EVENT_TYPE, ignore.case = TRUE)) %>% #filter to only wind events
+  distinct() %>% #remove duplicate rows 
+  select(-EVENT_NARRATIVE, -EPISODE_NARRATIVE, -END_RANGE, -END_AZIMUTH, -END_LOCATION, -BEGIN_RANGE, -BEGIN_AZIMUTH, -BEGIN_LOCATION, -TOR_F_SCALE, - TOR_LENGTH, -TOR_WIDTH, -TOR_OTHER_WFO, -TOR_OTHER_CZ_STATE, -TOR_OTHER_CZ_FIPS, -TOR_OTHER_CZ_NAME, -FLOOD_CAUSE, -SOURCE, -CZ_TIMEZONE, -CZ_TYPE, -WFO, -CZ_FIPS, -CZ_NAME, -STATE_FIPS, -EPISODE_ID, -END_DAY, - END_TIME, -END_YEARMONTH, -BEGIN_TIME, -BEGIN_DAY, -BEGIN_YEARMONTH, -DATA_SOURCE, -CATEGORY) %>%
+  filter(complete.cases(EVENT_TYPE, STATE, MONTH_NAME, MAGNITUDE, BEGIN_LAT)) %>%  #remove any rows that have an na in these columns
+    mutate(DAMAGE_CROPS = str_remove(DAMAGE_CROPS, "K"))  #remove K 
+
+cleaned_data$DAMAGE_CROPS = as.numeric(cleaned_data$DAMAGE_CROPS)
+
+#change M values in damage property to K
+cleaned_data$DAMAGE_PROPERTY = str_replace(cleaned_data$DAMAGE_PROPERTY,  "(\\d+(\\.\\d+)?)M",  function(x) {
+  number = as.numeric(str_extract(x, "\\d+(\\.\\d+)?"))
+ paste0(number * 10000, ".00K") })
+
+cleaned_data = cleaned_data %>%
+  mutate(DAMAGE_PROPERTY = str_remove(DAMAGE_PROPERTY, "K"))
+
+cleaned_data$DAMAGE_PROPERTY = as.numeric(cleaned_data$DAMAGE_PROPERTY)
+
+#make all NA values 0 
+#assume values no filled out in this column range means no damage/deaths/injuries 
+cleaned_data= cleaned_data %>%
+  mutate_at(vars(INJURIES_DIRECT:DAMAGE_CROPS), 
+            ~ifelse (is.na(.) | . == "", 0, .))
+}
+cleaned_eight = clean_data(eight)
+cleaned_thirteen = clean_data(thirteen)
+cleaned_eighteen = clean_data(eighteen)
+```
+
+
+
+## Combine Data and Create Aggregate Statistic
+
+There are six variables included in the calculation of the aggregate statistic: direct deaths, indirect deaths, direct injury, indirect injury, damage to property, and damage to crops. Within each variable, we scaled each value to be from zero to one using the following formula: (value - min(Variable))/(max(Variable) - min(Variable)). Once each variable is scaled to be from zero to one, we summed them to get an aggregate statistic. Because many of the wind events had little damage, this value was often very small and hard to interpret. Since we’re interested in the devastation of wind events relative to other wind events, we decided to scale and bin the aggregate such that:
+
+-   0 - No Devastation
+
+-   1 - Minimal Devastation
+
+-   2 - Low Devastation
+
+-   3 - Moderate Devastation
+
+-   4 - Most Devastation
+
+To scale the aggregate, we first set all rows with 0 for the aggregate value to be 0. Then, we removed all of these rows and found the quantiles of the aggregate statistic for the remaining rows. Any values in the first quartile were labeled as 1, any in the second as 2, any in the third as 3, and the remaining values in the fourth as 4. This made the aggregate more interpretable.
+
+
+
+```{r combineddata}
+# Combine Data
+combined_data <- rbind(cleaned_eight, cleaned_thirteen, cleaned_eighteen)
+
+# Reformat Date, Add storm time duration and change in lat/lon values
+combined_data <- combined_data %>% mutate(BEGIN_DATE_TIME = as.POSIXct(BEGIN_DATE_TIME, format = "%d-%b-%y %H:%M:%S"), END_DATE_TIME = as.POSIXct(END_DATE_TIME, format = "%d-%b-%y %H:%M:%S"), storm_time_duration = END_DATE_TIME - BEGIN_DATE_TIME, change_lon = END_LON - BEGIN_LON, change_lat = END_LAT - BEGIN_LAT)
+
+# Remove redundant columns
+combined_data <- combined_data %>% select(-BEGIN_LAT, -BEGIN_LON, -END_LAT, -END_LON, -BEGIN_DATE_TIME, -END_DATE_TIME)
+
+# Aggregate Stat
+combined_data <- combined_data %>% mutate(aggregate_stat = (INJURIES_DIRECT - min(INJURIES_DIRECT))/diff(range(INJURIES_DIRECT)) + (INJURIES_INDIRECT - min(INJURIES_INDIRECT))/diff(range(INJURIES_INDIRECT)) + (DEATHS_DIRECT - min(DEATHS_DIRECT))/diff(range(DEATHS_DIRECT)) + (DEATHS_INDIRECT - min(DEATHS_INDIRECT))/diff(range(DEATHS_INDIRECT)) + (DAMAGE_PROPERTY - min(DAMAGE_PROPERTY))/diff(range(DAMAGE_PROPERTY)) + (DAMAGE_CROPS - min(DAMAGE_CROPS))/diff(range(DAMAGE_CROPS)))
+
+# Scale Aggregate Stat
+scale_aggregate <- function(aggregate_stat){
+  scaled_stats <- numeric(length(aggregate_stat))
+  quantiles_aggregate <- quantile(aggregate_stat[aggregate_stat != 0])
+  
+  for (i in 1:length(aggregate_stat)){
+    if(aggregate_stat[i] == 0){
+      scaled_stats[i] <- 0
+    } else if (aggregate_stat[i] > 0 && aggregate_stat[i] <= quantiles_aggregate[2]) {
+      scaled_stats[i] <- 1
+    } else if (aggregate_stat[i] > quantiles_aggregate[2] && aggregate_stat[i] <= quantiles_aggregate[3]) {
+      scaled_stats[i] <- 2
+    } else if (aggregate_stat[i] > quantiles_aggregate[3] && aggregate_stat[i] <= quantiles_aggregate[4]) {
+      scaled_stats[i] <- 3
+    } else if (aggregate_stat[i] > quantiles_aggregate[4]) {
+      scaled_stats[i] <- 4
+    }
+  }
+  scaled_stats
+}
+
+combined_data <- combined_data %>% mutate(scaled_aggregate = scale_aggregate(aggregate_stat))
+
+write.csv(combined_data,"ML_wind_data.csv", row.names = FALSE)
+
+```
+
+
+
+## Data Visualizations
+
+## Programming Paradigms
+
+We employed the supervised learning paradigm when building our machine learning model. We used a random forest model, as the variable we were trying to predict is categorical with more than two choices. Our predictor variables are the following: state, year, month, event type, magnitude, magnitude type, time duration, change in latitude, and change in longitude.
+
+In building the model, we tuned the following hyperparameters using cross validation: number of trees, minimum samples required to be at a leaf node, and the number of features to consider at each split in a tree. During this hyperparameter tuning step, which is typically time consuming for large datasets such as ours, we used parallel computing. In the tune_grid() function, the evaluations of the different combinations of hyperparameters in the grid were evaluated on different cores. This sped up the process. We used the future package.
+
+## Creating Machine Learning Model
+
+
+
+```{r}
+library(tidymodels)
+library(ranger)
+library(parallel)
+library(future)
+```
+
+
+
+Preparing the Data
+
+
+
+```{r}
+# Read in data
+ML_data <- read.csv("ML_wind_data.csv")
+
+# Remove variables in aggregate statistic
+ML_data <- ML_data %>% select(-INJURIES_DIRECT, -INJURIES_INDIRECT, -DEATHS_DIRECT, -DEATHS_INDIRECT, -DAMAGE_PROPERTY, -DAMAGE_CROPS, -aggregate_stat)
+
+# Prepare remaining data for analysis -- make sure character strings are factors, etc.
+ML_data <- ML_data %>% mutate(STATE = as.factor(STATE), YEAR = as.factor(YEAR), MONTH_NAME = as.factor(MONTH_NAME), EVENT_TYPE = as.factor(EVENT_TYPE), MAGNITUDE_TYPE = as.factor(MAGNITUDE_TYPE), scaled_aggregate = as.factor(scaled_aggregate))
+
+ML_data <- na.omit(ML_data)
+head(ML_data)
+
+```
+
+
+
+Split the Data and Define the Model
+
+
+
+```{r}
+# Split data into training/test sets
+set.seed(1234)
+data_split <- initial_split(ML_data, prop = 3/4)
+train_data <- training(data_split)
+test_data  <- testing(data_split)
+
+# Define Recipe
+ML_recipe <- recipe(scaled_aggregate ~ ., data = train_data) %>% update_role(EVENT_ID, new_role = "ID")
+
+# Define Random Forest Model Specs
+model_spec <- rand_forest(mtry = tune(), trees = tune(), min_n = tune()) %>%
+  set_mode("classification") %>%
+  set_engine("ranger", importance = "permutation")
+
+# Create Workflow
+ML_workflow <- workflow() %>%
+  add_recipe(ML_recipe) %>%
+  add_model(model_spec)
+
+```
+
+
+
+### Hyperparameter Tuning with Parallel Computing
+
+
+
+```{r}
+# Set up parallel computing
+numCores <- detectCores()
+plan(multisession, workers = numCores)
+
+# Run hyperparameter tuning
+## define cross validation folds
+cv_folds <- vfold_cv(train_data, v = 3)
+
+## define hyperparameters to tune
+parameter_grid <- grid_regular(
+  mtry(range = c(2, 7)),
+  trees(range = c(50, 250)),
+  min_n(range = c(1, 10))
+)
+
+## tune hyperparameters
+tuned_results <- ML_workflow %>%
+  tune_grid(resamples = cv_folds, grid = parameter_grid) 
+
+tuned_results %>%
+  collect_metrics()
+
+# Return to work on one core
+plan(sequential)
+
+```
+
+
+
+Train, Test, and Evaluate Model
+
+
+
+```{r}
+# Finalize workflow with best hyperparameters
+best_params <- tuned_results %>%
+  select_best(metric = "roc_auc")
+best_params
+
+ML_workflow_final <- ML_workflow %>% finalize_workflow(best_params)
+
+# Train Data
+trained_model <- ML_workflow_final %>%
+  fit(data = train_data)
+
+# Test data on testing data
+test_predict <- predict(trained_model, new_data = test_data) %>%
+  bind_cols(test_data)
+
+# Evaluate model
+model_eval <- test_predict %>%
+  metrics(truth = scaled_aggregate, estimate = .pred_class)
+
+model_eval
+
+# Feature Importance
+importance <- trained_model %>%
+  extract_fit_engine() %>%
+  ranger::importance()
+
+importance
+
+```
+
+
+
+## What We Learned
+
+In the end, our model with the best hyperparameters had an accuracy of 0.6898446 and a kappa value – which measures how much better our model is than random chance (on a scale from 0 to 1) – of 0.4593361. The most important features in the model were wind magnitude and the state the event took place in. The least important features were changes in latitude and longitude, but that could be due to the fact that many wind events did not record changes in latitude and longitude. 
+
+These results indicate that our statistic for wind categorization can be predicted from our predictors, and that future work can be done to improve the model. This may include using different machine learning models and testing our model on different wind datasets to improve and test accuracy. One might also try different strategies for handling missing data – we chose to list everything missing in the devastation categorization as zero, but perhaps there are better strategies for this.
+
+## Links
+
+Github Repository:
+
+Website:
+
+## Sources
+
+Data Dictionary: <https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/Storm-Data-Bulk-csv-Format.pdf> 
+
+NOAA Database: <https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/> 
+
+Jacquot, Yves. “Predicting Tornado Magnitude with Machine Learning.” Predicting Tornado Magnitude with Machine Learning, Medium, 11 Oct. 2017, [medium.com/\@yves.jacquot/predicting-tornado-magnitude-with-machine-learning-c76df84d7872](http://medium.com/@yves.jacquot/predicting-tornado-magnitude-with-machine-learning-c76df84d7872).
+
+Diaz, Jeremy, and Maxwell B. Joseph. “Predicting property damage from tornadoes with zero-inflated neural networks.” Weather and Climate Extremes, vol. 25, Sept. 2019, p. 100216, <https://doi.org/10.1016/j.wace.2019.100216>.
+
+“FAR AFIELD: Researchers Seek out and Study Tornadoes and Severe Weather.” NSSL News, 31 Jan. 2024, [inside.nssl.noaa.gov/nsslnews/2024/01/far-afield-researchers-seek-out-and-study-tornadoes-and-severe-weather/](http://inside.nssl.noaa.gov/nsslnews/2024/01/far-afield-researchers-seek-out-and-study-tornadoes-and-severe-weather/). 
+

@@ -1,0 +1,219 @@
+---
+title: "data_download"
+format: html
+editor: visual
+---
+
+## Downloading the Data
+
+```{r}
+library(httr)
+library(purrr)
+library(R.utils)
+library(readr)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(stringr)
+```
+
+```{r}
+#create location to save the data files
+storm_data <- "storm_events_csvs"
+if(!dir.exists(storm_data)){
+  dir.create(storm_data)
+}
+
+#write a function to download and unzip csv file
+download_and_unzip <- function(url) {
+  tryCatch({
+    #extract proper file name
+    filename <- basename(url)
+    destfile <- file.path(storm_data, filename)
+    
+    #download the file
+    response <- GET(url, write_disk(destfile, overwrite = TRUE))
+    if (status_code(response) == 200) {
+      message("Downloaded: ", filename)
+      
+      #check if the file is a .gz and unzip
+      if (grepl("\\.gz$", filename)) {
+        decompressed_file <- sub("\\.gz$", "", destfile)
+        gunzip(destfile, destname = decompressed_file, overwrite = TRUE)
+        message("Decompressed: ", decompressed_file)
+      }
+    } else {
+      message("Failed to download: ", url)
+    }
+  }, error = function(e) {
+    message("Error downloading ", url, ": ", e$message)
+  })
+}
+
+#define the base url site and specific files we want to download
+base_url <- "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/"
+files_to_download <- c(
+  "StormEvents_details-ftp_v1.0_d2008_c20240620.csv.gz",
+  "StormEvents_details-ftp_v1.0_d2013_c20230118.csv.gz",
+  "StormEvents_details-ftp_v1.0_d2018_c20240716.csv.gz"
+)
+urls <- paste0(base_url, files_to_download)
+
+#use map from purrr to download the files
+map(urls, download_and_unzip)
+
+#read csv files and make data frames
+read_csvs <- function(directory) {
+  tryCatch({
+    #list the csv files available
+    csv_files <- list.files(directory, pattern = "\\.csv$", full.names = TRUE)
+    
+    #read in files and make into data frame
+    walk(csv_files, function(file) {
+      #create variable name to make dataframe
+      data_frame_name <- make.names(gsub("\\.csv$", "", basename(file)))
+      assign(data_frame_name, read_csv(file, col_types = cols()), envir = .GlobalEnv)
+      message("Data frame created: ", data_frame_name)
+    })
+  }, error = function(e) {
+    message("Error reading CSV files: ", e$message)
+  })
+}
+
+#try read function function
+read_csvs(storm_data)
+```
+
+```{r}
+eight = StormEvents_details.ftp_v1.0_d2008_c20240620
+thirteen = StormEvents_details.ftp_v1.0_d2013_c20230118
+eighteen = StormEvents_details.ftp_v1.0_d2018_c20240716
+```
+
+Data Cleaning
+
+```{r}
+clean_data = function(data) {
+cleaned_data = data %>% 
+  filter(grepl("wind", EVENT_TYPE, ignore.case = TRUE)) %>% #filter to only wind events
+  distinct() %>% #remove duplicate rows 
+  select(-EVENT_NARRATIVE, -EPISODE_NARRATIVE, -END_RANGE, -END_AZIMUTH, -END_LOCATION, -BEGIN_RANGE, -BEGIN_AZIMUTH, -BEGIN_LOCATION, -TOR_F_SCALE, - TOR_LENGTH, -TOR_WIDTH, -TOR_OTHER_WFO, -TOR_OTHER_CZ_STATE, -TOR_OTHER_CZ_FIPS, -TOR_OTHER_CZ_NAME, -FLOOD_CAUSE, -SOURCE, -CZ_TIMEZONE, -CZ_TYPE, -WFO, -CZ_FIPS, -CZ_NAME, -STATE_FIPS, -EPISODE_ID, -END_DAY, - END_TIME, -END_YEARMONTH, -BEGIN_TIME, -BEGIN_DAY, -BEGIN_YEARMONTH, -DATA_SOURCE, -CATEGORY) %>%
+  filter(complete.cases(EVENT_TYPE, STATE, MONTH_NAME, MAGNITUDE, BEGIN_LAT)) %>%  #remove any rows that have an na in these columns
+    mutate(DAMAGE_CROPS = str_remove(DAMAGE_CROPS, "K"))  #remove K 
+
+cleaned_data$DAMAGE_CROPS = as.numeric(cleaned_data$DAMAGE_CROPS)
+
+#change M values in damage property to K
+cleaned_data$DAMAGE_PROPERTY = str_replace(cleaned_data$DAMAGE_PROPERTY,  "(\\d+(\\.\\d+)?)M",  function(x) {
+  number = as.numeric(str_extract(x, "\\d+(\\.\\d+)?"))
+ paste0(number * 10000, ".00K") })
+
+cleaned_data = cleaned_data %>%
+  mutate(DAMAGE_PROPERTY = str_remove(DAMAGE_PROPERTY, "K"))
+
+cleaned_data$DAMAGE_PROPERTY = as.numeric(cleaned_data$DAMAGE_PROPERTY)
+
+#make all NA values 0 
+#assume values no filled out in this column range means no damage/deaths/injuries 
+cleaned_data= cleaned_data %>%
+  mutate_at(vars(INJURIES_DIRECT:DAMAGE_CROPS), 
+            ~ifelse (is.na(.) | . == "", 0, .))
+}
+cleaned_eight = clean_data(eight)
+cleaned_thirteen = clean_data(thirteen)
+cleaned_eighteen = clean_data(eighteen)
+
+# Reformate Date, Add storm time duration and change in lat/lon values
+cleaned_eight <- cleaned_eight %>% mutate(BEGIN_DATE_TIME = as.POSIXct(BEGIN_DATE_TIME, format = "%d-%b-%y %H:%M:%S"), END_DATE_TIME = as.POSIXct(END_DATE_TIME, format = "%d-%b-%y %H:%M:%S"), storm_time_duration = END_DATE_TIME - BEGIN_DATE_TIME, change_lon = END_LON - BEGIN_LON, change_lat = END_LAT - BEGIN_LAT)
+
+cleaned_thirteen <- cleaned_thirteen %>% mutate(BEGIN_DATE_TIME = as.POSIXct(BEGIN_DATE_TIME, format = "%d-%b-%y %H:%M:%S"), END_DATE_TIME = as.POSIXct(END_DATE_TIME, format = "%d-%b-%y %H:%M:%S"), storm_time_duration = END_DATE_TIME - BEGIN_DATE_TIME, change_lon = END_LON - BEGIN_LON, change_lat = END_LAT - BEGIN_LAT)
+
+cleaned_eighteen <- cleaned_eighteen %>% mutate(BEGIN_DATE_TIME = as.POSIXct(BEGIN_DATE_TIME, format = "%d-%b-%y %H:%M:%S"), END_DATE_TIME = as.POSIXct(END_DATE_TIME, format = "%d-%b-%y %H:%M:%S"), storm_time_duration = END_DATE_TIME - BEGIN_DATE_TIME, change_lon = END_LON - BEGIN_LON, change_lat = END_LAT - BEGIN_LAT)
+
+# Create Aggregate Statistic
+cleaned_eight <- cleaned_eight %>% mutate(aggregate_stat = (INJURIES_DIRECT - min(INJURIES_DIRECT))/diff(range(INJURIES_DIRECT)) + (INJURIES_INDIRECT - min(INJURIES_INDIRECT))/diff(range(INJURIES_INDIRECT)) + (DEATHS_DIRECT - min(DEATHS_DIRECT))/diff(range(DEATHS_DIRECT)) + (DEATHS_INDIRECT - min(DEATHS_INDIRECT))/diff(range(DEATHS_INDIRECT)) + (DAMAGE_PROPERTY - min(DAMAGE_PROPERTY))/diff(range(DAMAGE_PROPERTY)) + (DAMAGE_CROPS - min(DAMAGE_CROPS))/diff(range(DAMAGE_CROPS)))
+
+cleaned_thirteen <- cleaned_thirteen %>% mutate(aggregate_stat = (INJURIES_DIRECT - min(INJURIES_DIRECT))/diff(range(INJURIES_DIRECT)) + (INJURIES_INDIRECT - min(INJURIES_INDIRECT))/diff(range(INJURIES_INDIRECT)) + (DEATHS_DIRECT - min(DEATHS_DIRECT))/diff(range(DEATHS_DIRECT)) + (DEATHS_INDIRECT - min(DEATHS_INDIRECT))/diff(range(DEATHS_INDIRECT)) + (DAMAGE_PROPERTY - min(DAMAGE_PROPERTY))/diff(range(DAMAGE_PROPERTY)) + (DAMAGE_CROPS - min(DAMAGE_CROPS))/diff(range(DAMAGE_CROPS)))
+
+cleaned_eighteen <- cleaned_eighteen %>% mutate(aggregate_stat = (INJURIES_DIRECT - min(INJURIES_DIRECT))/diff(range(INJURIES_DIRECT)) + (INJURIES_INDIRECT - min(INJURIES_INDIRECT))/diff(range(INJURIES_INDIRECT)) + (DEATHS_DIRECT - min(DEATHS_DIRECT))/diff(range(DEATHS_DIRECT)) + (DEATHS_INDIRECT - min(DEATHS_INDIRECT))/diff(range(DEATHS_INDIRECT)) + (DAMAGE_PROPERTY - min(DAMAGE_PROPERTY))/diff(range(DAMAGE_PROPERTY)) + (DAMAGE_CROPS - min(DAMAGE_CROPS))/diff(range(DAMAGE_CROPS)))
+
+# Remove Redundant Columns
+ML_eight <- cleaned_eight %>% select(-BEGIN_LAT, -BEGIN_LON, -END_LAT, -END_LON, -BEGIN_DATE_TIME, -END_DATE_TIME)
+ML_thirteen <- cleaned_thirteen %>% select(-BEGIN_LAT, -BEGIN_LON, -END_LAT, -END_LON, -BEGIN_DATE_TIME, -END_DATE_TIME)
+ML_eighteen <- cleaned_eighteen %>% select(-BEGIN_LAT, -BEGIN_LON, -END_LAT, -END_LON, -BEGIN_DATE_TIME, -END_DATE_TIME)
+
+scale_aggregate <- function(aggregate_stat){
+  scaled_stats <- numeric(length(aggregate_stat))
+  quantiles_aggregate <- quantile(aggregate_stat[aggregate_stat != 0])
+  
+  for (i in 1:length(aggregate_stat)){
+    if(aggregate_stat[i] == 0){
+      scaled_stats[i] <- 0
+    } else if (aggregate_stat[i] > 0 && aggregate_stat[i] <= quantiles_aggregate[2]) {
+      scaled_stats[i] <- 1
+    } else if (aggregate_stat[i] > quantiles_aggregate[2] && aggregate_stat[i] <= quantiles_aggregate[3]) {
+      scaled_stats[i] <- 2
+    } else if (aggregate_stat[i] > quantiles_aggregate[3] && aggregate_stat[i] <= quantiles_aggregate[4]) {
+      scaled_stats[i] <- 3
+    } else if (aggregate_stat[i] > quantiles_aggregate[4]) {
+      scaled_stats[i] <- 4
+    }
+  }
+  scaled_stats
+}
+
+ML_eight <- ML_eight %>% mutate(scaled_aggregate = scale_aggregate(aggregate_stat))
+ML_thirteen <- ML_thirteen %>% mutate(scaled_aggregate = scale_aggregate(aggregate_stat))
+ML_eighteen <- ML_eighteen %>% mutate(scaled_aggregate = scale_aggregate(aggregate_stat))
+
+ML_eight
+ML_thirteen
+ML_eighteen
+
+```
+
+Plots
+```{r plots}
+library(ggplot2)
+# For aggregate stat
+ggplot(ML_eight, aes(aggregate_stat*1000)) + geom_histogram() + xlim(c(0,300)) + ylim(0, 100)
+ggplot(ML_thirteen, aes(aggregate_stat*1000)) + geom_histogram() + xlim(c(0,300)) + ylim(0, 100)
+ggplot(ML_eighteen, aes(aggregate_stat*1000)) + geom_histogram() + xlim(c(0,300)) + ylim(0, 100)
+
+# For scaled stat
+ggplot(ML_eight, aes(scaled_aggregate)) + geom_histogram()
+ggplot(ML_thirteen, aes(scaled_aggregate)) + geom_histogram()
+ggplot(ML_eighteen, aes(scaled_aggregate)) + geom_histogram()
+
+
+```
+
+Create Combined Data
+```{r combineddata}
+# Combine Data
+combined_data <- rbind(cleaned_eight, cleaned_thirteen, cleaned_eighteen)
+
+# Reformat Date, Add storm time duration and change in lat/lon values
+combined_data <- combined_data %>% mutate(BEGIN_DATE_TIME = as.POSIXct(BEGIN_DATE_TIME, format = "%d-%b-%y %H:%M:%S"), END_DATE_TIME = as.POSIXct(END_DATE_TIME, format = "%d-%b-%y %H:%M:%S"), storm_time_duration = END_DATE_TIME - BEGIN_DATE_TIME, change_lon = END_LON - BEGIN_LON, change_lat = END_LAT - BEGIN_LAT)
+
+# Remove redundant columns
+combined_data <- combined_data %>% select(-BEGIN_LAT, -BEGIN_LON, -END_LAT, -END_LON, -BEGIN_DATE_TIME, -END_DATE_TIME)
+
+# Aggregate Stat
+combined_data <- combined_data %>% mutate(aggregate_stat = (INJURIES_DIRECT - min(INJURIES_DIRECT))/diff(range(INJURIES_DIRECT)) + (INJURIES_INDIRECT - min(INJURIES_INDIRECT))/diff(range(INJURIES_INDIRECT)) + (DEATHS_DIRECT - min(DEATHS_DIRECT))/diff(range(DEATHS_DIRECT)) + (DEATHS_INDIRECT - min(DEATHS_INDIRECT))/diff(range(DEATHS_INDIRECT)) + (DAMAGE_PROPERTY - min(DAMAGE_PROPERTY))/diff(range(DAMAGE_PROPERTY)) + (DAMAGE_CROPS - min(DAMAGE_CROPS))/diff(range(DAMAGE_CROPS)))
+
+combined_data <- combined_data %>% mutate(scaled_aggregate = scale_aggregate(aggregate_stat))
+combined_data
+
+ggplot(combined_data, aes(scaled_aggregate)) + geom_histogram()
+
+write.csv(combined_data,"ML_wind_data.csv", row.names = FALSE)
+
+```
+
+
+
+
+
+
+

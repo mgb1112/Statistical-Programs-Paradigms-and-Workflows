@@ -1,0 +1,119 @@
+---
+title: "ML_model"
+format: html
+editor: visual
+---
+
+## ML Model
+```{r}
+library(dplyr)
+library(tidymodels)
+library(ranger)
+library(parallel)
+library(future)
+
+```
+
+Preparing the Data
+```{r}
+# Read in data
+ML_data <- read.csv("ML_wind_data.csv")
+
+# Remove variables in aggregate statistic
+ML_data <- ML_data %>% select(-INJURIES_DIRECT, -INJURIES_INDIRECT, -DEATHS_DIRECT, -DEATHS_INDIRECT, -DAMAGE_PROPERTY, -DAMAGE_CROPS, -aggregate_stat)
+
+# Prepare remaining data for analysis -- make sure character strings are factors, etc.
+ML_data <- ML_data %>% mutate(STATE = as.factor(STATE), YEAR = as.factor(YEAR), MONTH_NAME = as.factor(MONTH_NAME), EVENT_TYPE = as.factor(EVENT_TYPE), MAGNITUDE_TYPE = as.factor(MAGNITUDE_TYPE), scaled_aggregate = as.factor(scaled_aggregate))
+
+ML_data <- na.omit(ML_data)
+ML_data
+
+```
+
+Split the Data and Define the Model
+```{r}
+# Split data into training/test sets
+set.seed(1234)
+data_split <- initial_split(ML_data, prop = 3/4)
+train_data <- training(data_split)
+test_data  <- testing(data_split)
+
+# Define Recipe
+ML_recipe <- recipe(scaled_aggregate ~ ., data = train_data) %>% update_role(EVENT_ID, new_role = "ID")
+
+# Define Random Forest Model Specs
+model_spec <- rand_forest(mtry = tune(), trees = tune(), min_n = tune()) %>%
+  set_mode("classification") %>%
+  set_engine("ranger", importance = "permutation")
+
+# Create Workflow
+ML_workflow <- workflow() %>%
+  add_recipe(ML_recipe) %>%
+  add_model(model_spec)
+```
+
+Hyperparameter Tuning (with parallel computing)
+```{r}
+# Set up parallel computing
+numCores <- detectCores()
+plan(multisession, workers = numCores)
+
+# Run hyperparameter tuning
+## define cross validation folds
+cv_folds <- vfold_cv(train_data, v = 3)
+
+## define hyperparameters to tune
+parameter_grid <- grid_regular(
+  mtry(range = c(2, 7)),
+  trees(range = c(50, 250)),
+  min_n(range = c(1, 10))
+)
+
+## tune hyperparameters
+tuned_results <- ML_workflow %>%
+  tune_grid(resamples = cv_folds, grid = parameter_grid) 
+
+tuned_results %>%
+  collect_metrics()
+
+# Return to work on one core
+plan(sequential)
+
+```
+
+Train and Test Model
+```{r}
+# Finalize workflow with best hyperparameters
+best_params <- tuned_results %>%
+  select_best(metric = "roc_auc")
+best_params
+
+ML_workflow_final <- ML_workflow %>% finalize_workflow(best_params)
+
+# Train Data
+trained_model <- ML_workflow_final %>%
+  fit(data = train_data)
+
+# Test data on testing data
+test_predict <- predict(trained_model, new_data = test_data) %>%
+  bind_cols(test_data)
+```
+
+Evaluating the Model
+```{r}
+# Evaluate model
+model_eval <- test_predict %>%
+  metrics(truth = scaled_aggregate, estimate = .pred_class)
+
+model_eval
+
+# Feature Importance
+importance <- trained_model %>%
+  extract_fit_engine() %>%
+  ranger::importance()
+
+importance
+
+```
+
+
