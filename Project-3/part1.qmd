@@ -1,0 +1,96 @@
+---
+title: "part1"
+format: html
+editor: visual
+---
+
+Questions I aim to Answer: In what month in 2013 did the flights get delayed by the most time?
+What I want to visualize: Which month experienced the longest flight delay
+Data Dictionary: https://cran.r-project.org/web/packages/nycflights13/nycflights13.pdf
+
+```{r}
+library(DBI)
+library(RSQLite)
+library(dbplyr)
+library(nycflights13)
+library(dplyr)
+library(ggplot2)
+```
+
+
+
+1. If it’s already a SQL database, read into R using the DBI and RSQLite packages. If it’s not already a SQL database, create a new SQL database and use the dbWriteTable() function to add at minimum three tables to the SQL database.
+```{r}
+#read data into R
+con = dbConnect(drv = RSQLite::SQLite(), dbname= "nycflights13" )
+
+```
+
+
+```{r}
+#add tables to SQL database
+dbWriteTable(con, "flights", flights, overwrite = TRUE)
+dbWriteTable(con, "airlines", airlines,overwrite = TRUE)
+dbWriteTable(con, "airports", airports,overwrite = TRUE)
+dbWriteTable(con, "weather", weather, overwrite = TRUE)
+
+dbListTables(conn = con)
+
+```
+2. Write three SQL queries using dbGetQuery() to explore and summarize the data. You must use at least five different SQL functions (e.g. SELECT, GROUP BY, DISTINCT, SUM, etc).
+```{r}
+
+#create a new column that has the sum of the departure and arrival delays in each month
+query21 = dbGetQuery(con, "SELECT month, SUM(dep_delay) AS dep_delay_total, SUM(arr_delay) AS arr_delay_total
+                          FROM flights
+                          GROUP BY month")
+#count the total number of flights in each month
+query22 = dbGetQuery(con, "SELECT month, COUNT(*) AS total_flights
+                          FROM flights
+                          GROUP BY month")
+
+#find the maximum and minimum arrival delay 
+queryminmaxarr = dbGetQuery(con, "SELECT month, day, MAX(arr_delay) AS max_arr_delay, MIN(arr_delay) AS min_arr_delay
+FROM flights
+GROUP BY month")
+
+#find the maximum and minimum arrival delay 
+queryminmaxdep = dbGetQuery(con, "SELECT month, day, MAX(dep_delay) AS max_dep_delay, MIN(dep_delay) AS min_dep_delay
+FROM flights
+GROUP BY month")
+```
+
+3. Write two SQL queries to create new features from existing data
+```{r}
+#create a new column that shows the average arrival and departure delay for each month, listed in order of the month with the most delay to least delay
+query31 = dbGetQuery(con, "SELECT month, AVG(arr_delay) AS avg_arr_delay, AVG(dep_delay) AS avg_dep_delay
+FROM flights
+GROUP BY month
+ORDER BY avg_arr_delay DESC")
+
+#merge airlines data with flights data based on carrier to be able to see the carrier 
+query32 = dbGetQuery(con, "SELECT *
+                     FROM flights
+                     JOIN airlines
+                     USING (carrier)")
+```
+
+4. Visualize your data by creating a plot with ggplot2. For example, if using nycflights13, you could think about how to visualize delays by month, carrier, or weather conditions.
+```{r}
+
+ggplot(query31, aes(y = factor(month, levels = 1:12), x = avg_dep_delay)) + geom_bar(stat = "identity", fill = "lightpink") + labs(title = "Averge Departure Delay By Month", y = "Month", x = "Average Departure Delay (minutes)", caption = "Negative times represent early departures", subtitle = "Data from all flights in 2013 from NYC")
+
+ggplot(query31, aes(y = factor(month, levels = 1:12), x = avg_arr_delay)) + geom_bar(stat = "identity", fill = "lightblue") + labs(title = "Averge Arrival Delay By Month", y = "Month", x = "Average Arrival Delay (minutes)", caption =  "Negative times represent early arrivals", subtitle = "Data from all flights in 2013 from NYC")
+
+```
+
+
+5. Report your findings. Provide a paragraph summarizing your methods and key findings. Include any limitations or potential biases in your analysis. Be sure to comment and organize your code so is easy to understand what you are doing.
+
+When looking at flight delay times, July in 2013 had the largest average departure and arrival delays. This could possibly be due to the high volume of travelers during the summer months. All months had a positive average departure delay, meaning no flights were early. The longest departure delay occurred on January 11th, with the second-longest delay on June 5th. In terms of arrivals, October and September had, on average, early arrivals rather than delays. The longest arrival delay was on January 4th, with the second-longest delay on June 8th. A potential bias in my analysis is that weather was not taken into account, and this variable may have a greater impact on flight delays than the time of year.
+
+
+
+SQL functions used: SELECT, GROUP BY, SUM, COUNT, ORDER BY, AVG, JOIN
+
+

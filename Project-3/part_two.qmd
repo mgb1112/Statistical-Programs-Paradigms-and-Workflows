@@ -1,0 +1,83 @@
+---
+title: "project_3_part_2"
+format: html
+editor: visual
+---
+
+**Question:**
+
+In part one, we were exploring which months experienced the most delays. Thus, for part two we are going to build a predictive model to see if given a month we can determine the probability of a flight being delayed.
+
+**Data Preparation**
+
+```{r}
+#read in the R package with our selected data
+library(nycflights13)
+library(dplyr)
+#prepare data for the model that we want by adding a delay variable based on if the flight is delayed and the month
+flights_data <- flights %>% mutate(delayed = as.factor(if_else(arr_delay > 0, "Yes", "No")), month = as.factor(month)) %>% filter(!is.na(delayed), !is.na(month))
+```
+
+**Training the Model**
+
+```{r}
+library(tidymodels)
+library(dplyr)
+#split out data into training and testing sets
+flights_split <- initial_split(flights_data, prop = 0.8, strata = delayed)
+flights_training <- training(flights_split)
+flights_testing <- testing(flights_split)
+
+#initial recipe for delay based on month and our training set
+flights_recipe <- recipe(delayed ~ month, data = flights_training)
+
+#since we have a binary variable, make this logistic regression
+log_model <- logistic_reg() %>% set_engine("glm") %>% set_mode("classification")
+
+#make workflow
+flights_workflow <- workflow() %>% add_model(log_model) %>% add_recipe(flights_recipe)
+
+#training step
+flights_fit <- flights_workflow %>% fit(data = flights_training)
+
+```
+
+**Assessing the Model Performance**
+
+```{r}
+#create a function to summarize the model performance
+evaluate <- function(model_fit, data, dataset_name){
+  predict_prob <- predict(model_fit, data, type = "prob") %>% bind_cols(data)
+  predict_class <- predict(model_fit, data, type = "class") %>% rename(.pred_class = .pred_class)
+  prediction_combined <- predict_prob %>% bind_cols(predict_class)
+  
+ #roc
+  auc_results <- prediction_combined %>% roc_auc(truth = delayed, .pred_Yes) %>% mutate(.metric = "roc_auc")
+  
+ #accuracy
+  accuracy_results <- prediction_combined %>% accuracy(truth = delayed, estimate = .pred_class) %>% mutate(.metric = "accuracy")
+  
+  #combine roc and accuracy
+  summary <- bind_rows(auc_results, accuracy_results) %>% mutate(dataset = dataset_name)
+  
+  return(summary)
+}
+
+#eval training set
+training_summary <- evaluate(flights_fit, flights_training, "Training")
+
+#eval testing set
+testing_summary <- evaluate(flights_fit, flights_testing, "Testing")
+
+#combined summary
+model_summary <- bind_rows(training_summary, testing_summary)
+model_summary
+```
+
+**Findings and Recommendations**
+
+I started by downloading the nycflights13 dataset and figuring out what model I should try to make based upon the analysis that was completed in part one. In part one, we explored the relationship between month and flight delays. So, we decided to build a model that would predict the probability of delay given the information on the month. I began by cleaning/changing my data so it was setup how I needed it to build my model. This included adding a column called delay, which was a binary variable based on month and whether or not the flight was delayed. Then, I split my data into training and testing sets of data and "built" the model as logistic regression of type classification. After doing this, I trained the model using the training data set. After training the model, I tested it and evaluated its accuracy. I built a function to evaluate the auc_roc(models ability to distinguish between classes) and the accuracy(proportion of correct instances).
+
+I found that this is a very poor predictive model. The auc_roc scores for both the training and testing datasets are below 0.5, which is the score associated with random guesses. Additionally, the accuracy for both models is just under 60%. This is not very good prediction accuracy, although I suppose it is a bit better than the auc_roc scores. However, there are some limitations associated with this data. Firstly, the nycflight13 dataset is only looking at the flights from new york city in 2013. This means that we only have information on one year to try and train our dataset, which limits how accurate it can be. I do not know off the top of my head, but if it was a mild year in terms of weather then it may not accurately predict "normal" or if it was a super extreme weather year, the same problem exists. Also, since the training and testing set are randomly split, we do not necessarily know if they complement each other well for training. If the training set is almost all from similar months then it will likely not predict the rest of the year well. Additionally, while the model we made matches the exploration that we did in part one, I am not sure month is necessarily the best predictor. I believe that there are related, underlying variables that probably would have been more telling, such as perhaps weather?
+
+Based on this model, I do not have a ton of recommendations for reducing delays based on the month alone. I actually think my first prediction would be to NOT use month alone as a way of predicting delays. I do think the things that we might be able to get from looking at the months as a predictor may be based on seasonal data. For example, I might suggest using the months to determine seasons that may have weather pattern related delays (such as ice in the winter causing an uptick in delays in say December-February or thunderstorms causing delays in say June-August). This data may also be usable in terms of predicting major holiday congestion causing delays, such as increased delays in November and December from Thanksgiving, Christmas, and perhaps New Years travels. In summary, I would recommend using a model like this in conjunction with other data, such as weather to make more accurate predictions.
